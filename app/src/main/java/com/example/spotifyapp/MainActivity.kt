@@ -54,7 +54,7 @@ fun SpotifySearchScreen(databaseReference: DatabaseReference) {
     val context = LocalContext.current
     var artistName by remember { mutableStateOf("") }
     var trackList by remember { mutableStateOf(listOf<String>()) }
-    var savedTracks by remember { mutableStateOf(listOf<String>()) }
+    var savedTracks by remember { mutableStateOf(listOf<Pair<String, String>>()) }
     var showSavedTracks by remember { mutableStateOf(false) }
     val addedTracks = remember { mutableStateListOf<String>() }
 
@@ -132,12 +132,24 @@ fun SpotifySearchScreen(databaseReference: DatabaseReference) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(savedTracks) { track ->
-                    Text(track, modifier = Modifier.padding(8.dp))
+                items(savedTracks) { (key, track) -> // Each item is a Pair(key, track)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(track, modifier = Modifier.weight(1f).padding(8.dp))
+                        Button(onClick = {
+                            removeTrackFromFirebase(databaseReference, key) // Remove track using its key
+                            savedTracks = savedTracks.filterNot { it.first == key } // Update UI
+                        }) {
+                            Text("Remove")
+                        }
+                    }
                 }
             }
 
-            // Only show the "Back to Search" button here in Saved Tracks view
+            // Back to Search button
             Button(
                 onClick = { showSavedTracks = false },
                 modifier = Modifier.fillMaxWidth()
@@ -147,6 +159,7 @@ fun SpotifySearchScreen(databaseReference: DatabaseReference) {
         }
     }
 }
+
 
 // Fetch artist and track data from Spotify API
 fun fetchTracks(artistName: String, onTracksFetched: (List<String>) -> Unit) {
